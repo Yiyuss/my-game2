@@ -226,6 +226,7 @@ function resetGame() {
   enemies = [];
 
   spawnEnemy();
+  enemyInterval = setInterval(spawnEnemy, 5000);
 
   gameRunning = true;
   gameInterval = setInterval(updateGame, 1000 / 60);
