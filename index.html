@@ -1,61 +1,33 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en" >
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>遊戲</title>
-  <style>
-    /* 主容器設置 */
-    #game-container {
-      position: relative;
-      width: 800px;
-      height: 600px;
-      background-color: lightgrey;
-      margin: 0 auto;
-      border: 2px solid black;
-    }
+  <title>馬桶坐坐</title>
+  <link rel="stylesheet" href="./style.css">
 
-    /* 玩家設置 */
-    #player {
-      width: 50px;
-      height: 50px;
-      background-color: red;
-      position: absolute;
-    }
-
-    /* 敵人設置 */
-    .enemy {
-      width: 50px;
-      height: 50px;
-      background-color: blue;
-      position: absolute;
-    }
-
-    /* 開始按鈕設置 */
-    #startButton {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      text-align: center;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-
-    #startButton:active {
-      background-color: #45a049;
-    }
-  </style>
 </head>
 <body>
-  <div id="game-container">
-    <div id="player"></div>
-  </div>
-  <button id="startButton">開始遊戲</button>
+<!-- partial:index.partial.html -->
+<button id="start-btn">開始遊戲</button>
 
-  <script src="game.js"></script>
+<div id="scoreboard">
+  得分: <span id="score">0</span> |
+  時間: <span id="time">0</span> 秒
+</div>
+
+<div id="game-container">
+  <!-- 影片覆蓋層 -->
+  <div id="video-overlay" style="display:none;">
+    <iframe id="end-video" width="100%" height="100%" src="" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+  </div>
+
+  <div id="player" style="position: absolute; width: 50px; height: 50px; background-color: blue;"></div>
+  <div id="enemy" style="position: absolute; width: 50px; height: 50px; background-color: red;"></div>
+</div>
+
+<audio id="hit-sound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
 </body>
 </html>
