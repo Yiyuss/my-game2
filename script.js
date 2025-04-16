@@ -1,18 +1,21 @@
-// 遊戲變數初始化
-const player = document.getElementById('player');
-const gameContainer = document.getElementById('game-container');
-const startButton = document.getElementById('start-button');
-const video = document.getElementById('game-video');
-const enemyContainer = document.getElementById('enemy-container');
+let player = document.getElementById("player");
+let gameContainer = document.getElementById("game-container");
+let playerPos = { x: 200, y: 200 }; // 玩家起始位置
+let targetPos = { x: playerPos.x, y: playerPos.y }; // 目標位置（滑鼠或鍵盤控制）
+let enemyPositions = []; // 敌人位置
+let enemies = []; // 敌人元素
+let gameInterval; // 遊戲主循環
+let lastTime = 0; // 記錄上次時間
+let frameDuration = 1000 / 60; // 每秒幀數（60 FPS）
 
-let playerPos = { x: 100, y: 100 };  // 玩家初始位置
-let targetPos = { x: 200, y: 200 };  // 玩家目標位置
-let enemies = [];  // 存儲敵人的陣列
-let isGameRunning = false;
-let enemySpeed = 1; // 敵人移動速度
-let gameInterval; // 遊戲循環
+// 角色初始化
+function initPlayer() {
+  player.style.position = 'absolute';
+  player.style.left = playerPos.x + 'px';
+  player.style.top = playerPos.y + 'px';
+}
 
-// 玩家移動函數
+// 更新玩家位置
 function movePlayer() {
   let dx = targetPos.x - playerPos.x;
   let dy = targetPos.y - playerPos.y;
@@ -37,123 +40,101 @@ function movePlayer() {
     // 下邊界
     if (playerPos.y + playerHeight > gameContainerRect.height) playerPos.y = gameContainerRect.height - playerHeight;
 
+    // 更新角色的位置
     player.style.left = playerPos.x + 'px';
     player.style.top = playerPos.y + 'px';
   }
 }
 
-// 敵人生成函數
-function createEnemy() {
-  const enemy = document.createElement('div');
-  enemy.classList.add('enemy');
-  enemy.style.left = Math.random() * (gameContainer.offsetWidth - 50) + 'px';
-  enemy.style.top = Math.random() * (gameContainer.offsetHeight - 50) + 'px';
-  enemyContainer.appendChild(enemy);
-  enemies.push(enemy);
-}
-
-// 敵人追蹤玩家
-function moveEnemies() {
-  enemies.forEach(enemy => {
-    const enemyPos = {
-      x: parseFloat(enemy.style.left),
-      y: parseFloat(enemy.style.top)
-    };
-    
-    let dx = playerPos.x - enemyPos.x;
-    let dy = playerPos.y - enemyPos.y;
-    let dist = Math.sqrt(dx * dx + dy * dy);
-    
-    if (dist > 2) {
-      let speed = enemySpeed;
-      enemyPos.x += (dx / dist) * speed;
-      enemyPos.y += (dy / dist) * speed;
-      
-      // 更新敵人位置
-      enemy.style.left = enemyPos.x + 'px';
-      enemy.style.top = enemyPos.y + 'px';
-    }
-  });
-}
-
-// 開始遊戲按鈕事件
-startButton.addEventListener('click', () => {
-  if (!isGameRunning) {
-    startGame();
-  } else {
-    resetGame();
-  }
-});
-
-// 開始遊戲
-function startGame() {
-  isGameRunning = true;
-  startButton.innerHTML = '重新開始';
-  video.play();
-  gameInterval = setInterval(gameLoop, 1000 / 60);  // 60 FPS
-  createEnemy();
-}
-
-// 重置遊戲
-function resetGame() {
-  isGameRunning = false;
-  startButton.innerHTML = '開始遊戲';
-  video.pause();
-  video.currentTime = 0;
-  enemies.forEach(enemy => enemy.remove());
-  enemies = [];
-  playerPos = { x: 100, y: 100 };
-  targetPos = { x: 200, y: 200 };
-  player.style.left = playerPos.x + 'px';
-  player.style.top = playerPos.y + 'px';
-  clearInterval(gameInterval);  // 停止遊戲循環
-}
-
-// 遊戲主循環
-function gameLoop() {
-  if (isGameRunning) {
-    movePlayer();
-    moveEnemies();
+// 鍵盤控制
+function handleKeyDown(event) {
+  switch (event.key) {
+    case 'ArrowUp':
+      targetPos.y -= 10;
+      break;
+    case 'ArrowDown':
+      targetPos.y += 10;
+      break;
+    case 'ArrowLeft':
+      targetPos.x -= 10;
+      break;
+    case 'ArrowRight':
+      targetPos.x += 10;
+      break;
   }
 }
 
-// 處理滑鼠點擊移動角色
-gameContainer.addEventListener('click', (event) => {
+// 滑鼠控制
+function handleMouseMove(event) {
   const rect = gameContainer.getBoundingClientRect();
   targetPos.x = event.clientX - rect.left;
   targetPos.y = event.clientY - rect.top;
-});
-
-// 處理鍵盤移動
-document.addEventListener('keydown', (event) => {
-  const speed = 5;
-  switch (event.key) {
-    case 'ArrowUp':
-      targetPos.y -= speed;
-      break;
-    case 'ArrowDown':
-      targetPos.y += speed;
-      break;
-    case 'ArrowLeft':
-      targetPos.x -= speed;
-      break;
-    case 'ArrowRight':
-      targetPos.x += speed;
-      break;
-  }
-});
-
-// 影片結束後重置遊戲
-video.addEventListener('ended', () => {
-  resetGame();
-});
-
-// 初始化遊戲
-function init() {
-  player.style.left = playerPos.x + 'px';
-  player.style.top = playerPos.y + 'px';
-  video.style.width = gameContainer.offsetWidth + 'px';  // 設置影片對齊遊戲畫面
-  video.style.height = gameContainer.offsetHeight + 'px';
 }
 
-init();
+// 初始化敵人
+function initEnemies() {
+  for (let i = 0; i < 5; i++) {
+    const enemy = document.createElement('div');
+    enemy.className = 'enemy';
+    gameContainer.appendChild(enemy);
+    enemies.push(enemy);
+
+    let x = Math.random() * gameContainer.offsetWidth;
+    let y = Math.random() * gameContainer.offsetHeight;
+    enemyPositions.push({ x, y });
+
+    enemy.style.position = 'absolute';
+    enemy.style.left = x + 'px';
+    enemy.style.top = y + 'px';
+  }
+}
+
+// 移動敵人
+function moveEnemies() {
+  for (let i = 0; i < enemies.length; i++) {
+    let dx = playerPos.x - enemyPositions[i].x;
+    let dy = playerPos.y - enemyPositions[i].y;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+    let speed = 2;  // 敵人移動速度
+
+    if (dist > speed) {
+      enemyPositions[i].x += (dx / dist) * speed;
+      enemyPositions[i].y += (dy / dist) * speed;
+    }
+
+    // 更新敵人位置
+    enemies[i].style.left = enemyPositions[i].x + 'px';
+    enemies[i].style.top = enemyPositions[i].y + 'px';
+  }
+}
+
+// 更新遊戲狀態
+function updateGame() {
+  let currentTime = Date.now();
+  if (currentTime - lastTime >= frameDuration) {
+    movePlayer();
+    moveEnemies();
+    lastTime = currentTime;
+  }
+}
+
+// 啟動遊戲
+function startGame() {
+  gameInterval = setInterval(updateGame, 1000 / 60); // 60 FPS
+}
+
+// 停止遊戲
+function stopGame() {
+  clearInterval(gameInterval);
+}
+
+// 設置事件監聽
+document.addEventListener('keydown', handleKeyDown);
+gameContainer.addEventListener('mousemove', handleMouseMove);
+
+// 初始化遊戲
+initPlayer();
+initEnemies();
+
+// 啟動遊戲循環
+startGame();
