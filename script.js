@@ -80,8 +80,9 @@ function initEnemies() {
     gameContainer.appendChild(enemy);
     enemies.push(enemy);
 
-    let x = Math.random() * gameContainer.offsetWidth;
-    let y = Math.random() * gameContainer.offsetHeight;
+    // 隨機生成敵人的位置
+    let x = Math.random() * (gameContainer.offsetWidth - 50); // 減去敵人寬度以免超出邊界
+    let y = Math.random() * (gameContainer.offsetHeight - 50); // 減去敵人高度以免超出邊界
     enemyPositions.push({ x, y });
 
     enemy.style.position = 'absolute';
