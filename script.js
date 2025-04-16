@@ -1,204 +1,146 @@
-const gameArea = document.getElementById("gameArea");
-const player = document.getElementById("player");
-const video = document.getElementById("video");
-const startButton = document.getElementById("startButton");
+let player, enemies = [], score = 0, time = 0, gameInterval, enemyInterval, timerInterval;
+let gameStarted = false;
 
-let enemies = [];
-let isGameRunning = false;
-let moveSpeed = 5;
-let dx = 0, dy = 0;
-let animationFrameId;
-let targetX = 0, targetY = 0;
-const enemySize = 50;
+const gameContainer = document.getElementById("game-container");
+const playerElement = document.getElementById("player");
+const scoreElement = document.getElementById("score");
+const timeElement = document.getElementById("time");
+const startBtn = document.getElementById("start-btn");
+const videoOverlay = document.getElementById("video-overlay");
+const endVideo = document.getElementById("end-video");
+const hitSound = document.getElementById("hit-sound");
+
 const playerSize = 50;
-const margin = 10;
+let playerX = 100;
+let playerY = 100;
+let keys = {};
 
 function createEnemy() {
   const enemy = document.createElement("div");
-  enemy.classList.add("enemy");
-  gameArea.appendChild(enemy);
-
-  let x, y, isOverlapping;
-
-  do {
-    isOverlapping = false;
-    x = Math.random() * (gameArea.clientWidth - enemySize);
-    y = Math.random() * (gameArea.clientHeight - enemySize);
-
-    for (const other of enemies) {
-      const ox = parseFloat(other.style.left);
-      const oy = parseFloat(other.style.top);
-      if (
-        x < ox + enemySize &&
-        x + enemySize > ox &&
-        y < oy + enemySize &&
-        y + enemySize > oy
-      ) {
-        isOverlapping = true;
-        break;
-      }
-    }
-  } while (isOverlapping);
-
-  enemy.style.left = `${x}px`;
-  enemy.style.top = `${y}px`;
+  enemy.className = "enemy";
+  enemy.style.width = "50px";
+  enemy.style.height = "50px";
+  enemy.style.position = "absolute";
+  enemy.style.left = Math.random() * (gameContainer.clientWidth - 50) + "px";
+  enemy.style.top = Math.random() * (gameContainer.clientHeight - 50) + "px";
+  enemy.style.backgroundImage = "url('https://i.imgur.com/NPnmEtr.png')";
+  enemy.style.backgroundSize = "cover";
+  enemy.style.zIndex = 2;
+  gameContainer.appendChild(enemy);
   enemies.push(enemy);
 }
 
-function updateEnemies() {
-  const playerX = parseFloat(player.style.left);
-  const playerY = parseFloat(player.style.top);
+function moveEnemies() {
+  enemies.forEach(enemy => {
+    const ex = parseInt(enemy.style.left);
+    const ey = parseInt(enemy.style.top);
 
-  enemies.forEach((enemy, i) => {
-    const ex = parseFloat(enemy.style.left);
-    const ey = parseFloat(enemy.style.top);
-    let dx = playerX - ex;
-    let dy = playerY - ey;
-    const dist = Math.hypot(dx, dy);
-    dx /= dist;
-    dy /= dist;
+    const dx = playerX - ex;
+    const dy = playerY - ey;
+    const dist = Math.sqrt(dx * dx + dy * dy);
 
-    let newX = ex + dx * 1.5;
-    let newY = ey + dy * 1.5;
+    const speed = 1.5;
+    const nx = dx / dist;
+    const ny = dy / dist;
 
-    // 防止敵人重疊
-    let overlapped = false;
-    for (let j = 0; j < enemies.length; j++) {
-      if (i !== j) {
-        const other = enemies[j];
-        const ox = parseFloat(other.style.left);
-        const oy = parseFloat(other.style.top);
-        if (
-          newX < ox + enemySize &&
-          newX + enemySize > ox &&
-          newY < oy + enemySize &&
-          newY + enemySize > oy
-        ) {
-          overlapped = true;
-          break;
-        }
-      }
-    }
+    const newX = ex + nx * speed;
+    const newY = ey + ny * speed;
 
-    if (!overlapped) {
-      enemy.style.left = `${newX}px`;
-      enemy.style.top = `${newY}px`;
+    enemy.style.left = Math.max(0, Math.min(gameContainer.clientWidth - 50, newX)) + "px";
+    enemy.style.top = Math.max(0, Math.min(gameContainer.clientHeight - 50, newY)) + "px";
+
+    // collision
+    if (
+      newX < playerX + playerSize &&
+      newX + 50 > playerX &&
+      newY < playerY + playerSize &&
+      newY + 50 > playerY
+    ) {
+      endGame();
     }
   });
 }
 
-function gameLoop() {
-  if (!isGameRunning) return;
+function updatePlayerPosition() {
+  const speed = 5;
+  if (keys["ArrowUp"] || keys["w"]) playerY -= speed;
+  if (keys["ArrowDown"] || keys["s"]) playerY += speed;
+  if (keys["ArrowLeft"] || keys["a"]) playerX -= speed;
+  if (keys["ArrowRight"] || keys["d"]) playerX += speed;
 
-  // 計算最大邊界
-  const maxX = gameArea.clientWidth - player.offsetWidth - margin;
-  const maxY = gameArea.clientHeight - player.offsetHeight - margin;
+  // 限制邊界
+  playerX = Math.max(0, Math.min(gameContainer.clientWidth - playerSize, playerX));
+  playerY = Math.max(0, Math.min(gameContainer.clientHeight - playerSize, playerY));
 
-  // 鍵盤移動
-  let newX = parseFloat(player.style.left) + dx;
-  let newY = parseFloat(player.style.top) + dy;
-  newX = Math.max(margin, Math.min(newX, maxX));
-  newY = Math.max(margin, Math.min(newY, maxY));
-  player.style.left = `${newX}px`;
-  player.style.top = `${newY}px`;
+  playerElement.style.left = playerX + "px";
+  playerElement.style.top = playerY + "px";
+}
 
-  updateEnemies();
-  animationFrameId = requestAnimationFrame(gameLoop);
+function updateGame() {
+  updatePlayerPosition();
+  moveEnemies();
+  score++;
+  scoreElement.textContent = score;
+}
+
+function startTimer() {
+  time = 0;
+  timerInterval = setInterval(() => {
+    time++;
+    timeElement.textContent = time;
+  }, 1000);
+}
+
+function resetGame() {
+  enemies.forEach(e => e.remove());
+  enemies = [];
+  clearInterval(gameInterval);
+  clearInterval(enemyInterval);
+  clearInterval(timerInterval);
+  score = 0;
+  scoreElement.textContent = score;
+  timeElement.textContent = 0;
+  playerX = 100;
+  playerY = 100;
 }
 
 function startGame() {
-  player.style.left = "100px";
-  player.style.top = "100px";
-  dx = 0;
-  dy = 0;
-  isGameRunning = true;
-  enemies.forEach(e => e.remove());
-  enemies = [];
-  for (let i = 0; i < 10; i++) createEnemy();
-  video.style.display = "none";
-  video.pause();
-  gameLoop();
+  if (gameStarted) return;
+  gameStarted = true;
+  resetGame();
+
+  playerElement.style.backgroundImage = "url('https://i.imgur.com/JFTxfva.png')";
+  playerElement.style.width = playerSize + "px";
+  playerElement.style.height = playerSize + "px";
+  playerElement.style.left = playerX + "px";
+  playerElement.style.top = playerY + "px";
+  playerElement.style.zIndex = 3;
+
+  gameInterval = setInterval(updateGame, 30);
+  enemyInterval = setInterval(createEnemy, 2000);
+  startTimer();
 }
 
-startButton.addEventListener("click", () => {
-  if (!isGameRunning) {
-    startGame();
-  } else {
-    isGameRunning = false;
-    cancelAnimationFrame(animationFrameId);
-  }
-});
-
-document.addEventListener("keydown", (e) => {
-  if (!isGameRunning) return;
-  switch (e.key) {
-    case "ArrowUp":
-    case "w":
-      dy = -moveSpeed;
-      break;
-    case "ArrowDown":
-    case "s":
-      dy = moveSpeed;
-      break;
-    case "ArrowLeft":
-    case "a":
-      dx = -moveSpeed;
-      break;
-    case "ArrowRight":
-    case "d":
-      dx = moveSpeed;
-      break;
-  }
-});
-
-document.addEventListener("keyup", (e) => {
-  if (!isGameRunning) return;
-  switch (e.key) {
-    case "ArrowUp":
-    case "ArrowDown":
-    case "w":
-    case "s":
-      dy = 0;
-      break;
-    case "ArrowLeft":
-    case "ArrowRight":
-    case "a":
-    case "d":
-      dx = 0;
-      break;
-  }
-});
-
-gameArea.addEventListener("click", (e) => {
-  if (!isGameRunning) return;
-  const maxX = gameArea.clientWidth - player.offsetWidth - margin;
-  const maxY = gameArea.clientHeight - player.offsetHeight - margin;
-
-  targetX = Math.max(margin, Math.min(e.clientX - player.offsetWidth / 2, maxX));
-  targetY = Math.max(margin, Math.min(e.clientY - player.offsetHeight / 2, maxY));
-  player.style.left = `${targetX}px`;
-  player.style.top = `${targetY}px`;
-});
-
-// 撞到敵人播放影片
-function checkCollision() {
-  const playerRect = player.getBoundingClientRect();
-  for (const enemy of enemies) {
-    const enemyRect = enemy.getBoundingClientRect();
-    if (
-      playerRect.left < enemyRect.right &&
-      playerRect.right > enemyRect.left &&
-      playerRect.top < enemyRect.bottom &&
-      playerRect.bottom > enemyRect.top
-    ) {
-      isGameRunning = false;
-      cancelAnimationFrame(animationFrameId);
-      video.style.display = "block";
-      video.currentTime = 0;
-      video.play();
-      break;
-    }
-  }
+function endGame() {
+  clearInterval(gameInterval);
+  clearInterval(enemyInterval);
+  clearInterval(timerInterval);
+  hitSound.play();
+  showVideo();
+  gameStarted = false;
 }
 
-setInterval(checkCollision, 100);
+function showVideo() {
+  videoOverlay.style.display = "flex";
+  endVideo.src = "https://www.youtube.com/embed/hG8f19z8VJ8?autoplay=1";
+}
+
+startBtn.addEventListener("click", startGame);
+
+document.addEventListener("keydown", e => {
+  keys[e.key] = true;
+});
+
+document.addEventListener("keyup", e => {
+  keys[e.key] = false;
+});
