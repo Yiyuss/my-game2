@@ -7,6 +7,7 @@ let enemies = []; // 敌人元素
 let gameInterval; // 遊戲主循環
 let lastTime = 0; // 記錄上次時間
 let frameDuration = 1000 / 60; // 每秒幀數（60 FPS）
+let gameStarted = false; // 遊戲是否開始
 
 // 角色初始化
 function initPlayer() {
@@ -120,21 +121,25 @@ function updateGame() {
 
 // 啟動遊戲
 function startGame() {
-  gameInterval = setInterval(updateGame, 1000 / 60); // 60 FPS
+  if (!gameStarted) {
+    gameStarted = true;
+    initEnemies(); // 初始化敵人
+    gameInterval = setInterval(updateGame, 1000 / 60); // 60 FPS
+  }
 }
 
 // 停止遊戲
 function stopGame() {
   clearInterval(gameInterval);
+  gameStarted = false;
 }
 
 // 設置事件監聽
 document.addEventListener('keydown', handleKeyDown);
 gameContainer.addEventListener('mousemove', handleMouseMove);
 
+// 設置開始遊戲按鈕
+document.getElementById("startButton").addEventListener('click', startGame);
+
 // 初始化遊戲
 initPlayer();
-initEnemies();
-
-// 啟動遊戲循環
-startGame();
