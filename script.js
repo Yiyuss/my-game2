@@ -46,6 +46,15 @@ function movePlayer() {
   if (dist > speed) {
     playerPos.x += (dx / dist) * speed;
     playerPos.y += (dy / dist) * speed;
+
+    // 邊界檢查，防止人物超出遊戲區域
+    const gameContainer = document.getElementById('game-container');
+    const gameRect = gameContainer.getBoundingClientRect();
+
+    // 確保人物位置不會超過邊界
+    playerPos.x = Math.max(gameRect.left, Math.min(playerPos.x, gameRect.right - player.offsetWidth));
+    playerPos.y = Math.max(gameRect.top, Math.min(playerPos.y, gameRect.bottom - player.offsetHeight));
+
     player.style.left = playerPos.x + 'px';
     player.style.top = playerPos.y + 'px';
   }
